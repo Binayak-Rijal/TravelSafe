@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">TravelSafe</string>
+    <string name="explore_nthe_world">Explore\nThe World</string>
+    <string name="manage_your_trips_with_n_our_app">Manage Your Trips With\n Our App</string>
+    <string name="lets_start_our_journey">Lets Start Our Journey</string>
+    <string name="title_activity_login">LoginActivity</string>
+    <string name="title_activity_registration">RegistrationActivity</string>
+    <string name="title_activity_splash">SplashActivity</string>
+    <string name="title_activity_dash_board">DashBoardActivity</string>
+    <string name="title_activity_forget_password">ForgetPasswordActivity</string>
+</resources>

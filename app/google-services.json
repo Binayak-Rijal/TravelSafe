@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "712131628496",
+    "firebase_url": "https://stayease-f2dd9-default-rtdb.firebaseio.com",
+    "project_id": "stayease-f2dd9",
+    "storage_bucket": "stayease-f2dd9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:712131628496:android:229e4ae170a3cfcdac3dd5",
+        "android_client_info": {
+          "package_name": "com.example.semesterthreeproject"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlkyTVR3d4xmg2Ah1hXxMtx_B34ON8--M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:712131628496:android:2c45c47fe1312477ac3dd5",
+        "android_client_info": {
+          "package_name": "com.example.travelsafe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlkyTVR3d4xmg2Ah1hXxMtx_B34ON8--M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
