@@ -7,7 +7,7 @@ import com.example.travelsafe.repository.TripRepoImpl
 
 class TripViewModel : ViewModel() {
 
-    // ✅ Using RepoImpl through the interface
+    // Using RepoImpl through the interface
     private val tripRepo: TripRepo = TripRepoImpl()
 
     fun addTrip(
