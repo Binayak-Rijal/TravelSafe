@@ -25,7 +25,7 @@ import coil.compose.AsyncImage
 import com.example.travelsafe.R
 import com.example.travelsafe.model.TripResult
 import com.example.travelsafe.viewmodel.ResultsViewModel
-
+//DEbugged
 @Composable
 fun ResultsScreen(
     from: String = "New York",
