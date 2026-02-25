@@ -6,7 +6,7 @@ import com.example.travelsafe.repository.AuthRepoImpl
 
 class AuthViewModel : ViewModel() {
 
-    // ✅ Using RepoImpl through the interface
+    // Using RepoImpl through the interface
     private val authRepo: AuthRepo = AuthRepoImpl()
 
     fun login(
