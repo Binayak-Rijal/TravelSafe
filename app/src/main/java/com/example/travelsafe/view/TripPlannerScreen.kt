@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.sp
 import com.example.travelsafe.R
 import com.example.travelsafe.model.Trip
 import com.example.travelsafe.utils.TripManager
-
+//DEbugged
 @Composable
 fun TripPlannerScreen() {
     var showAddDialog by remember { mutableStateOf(false) }
