@@ -23,7 +23,7 @@ import coil.compose.AsyncImage
 import com.example.travelsafe.R
 import com.example.travelsafe.model.RecommendedPlace
 import com.example.travelsafe.utils.BookmarkManager
-
+//DEbugged
 @Composable
 fun BookmarkScreen() {
     var selectedPlace by remember { mutableStateOf<RecommendedPlace?>(null) }
