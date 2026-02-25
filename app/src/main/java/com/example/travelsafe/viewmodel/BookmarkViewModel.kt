@@ -7,7 +7,7 @@ import com.example.travelsafe.repository.BookmarkRepoImpl
 
 class BookmarkViewModel : ViewModel() {
 
-    // ✅ Using RepoImpl through the interface
+    // Using RepoImpl through the interface
     private val bookmarkRepo: BookmarkRepo = BookmarkRepoImpl()
 
     fun getAllBookmarks(
