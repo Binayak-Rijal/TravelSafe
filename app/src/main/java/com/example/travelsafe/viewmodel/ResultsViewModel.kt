@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.example.travelsafe.model.TripResult
-
+//DEbugged
 class ResultsViewModel : ViewModel() {
 
     var selectedFilter by mutableStateOf("All")
