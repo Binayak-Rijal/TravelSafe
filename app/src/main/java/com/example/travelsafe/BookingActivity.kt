@@ -24,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -41,7 +42,7 @@ class BookingActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         val placeId = intent.getStringExtra("placeId") ?: ""
-        val placeName = intent.getStringExtra("placeName") ?: ""
+        val placeName = intent.getStringExtra("placeName") ?: "Unknown Place"
         val placeLocation = intent.getStringExtra("placeLocation") ?: ""
         val placePrice = intent.getStringExtra("placePrice") ?: ""
         val placeImageUrl = intent.getStringExtra("placeImageUrl") ?: ""
@@ -51,6 +52,7 @@ class BookingActivity : ComponentActivity() {
         setContent {
             TravelSafeTheme {
                 BookingScreen(
+                    activity = this,
                     placeId = placeId,
                     placeName = placeName,
                     placeLocation = placeLocation,
@@ -60,10 +62,7 @@ class BookingActivity : ComponentActivity() {
                     placeRating = placeRating,
                     bookingViewModel = bookingViewModel,
                     onBack = { finish() },
-                    onBookingSuccess = {
-                        Toast.makeText(this, "Booking confirmed!", Toast.LENGTH_SHORT).show()
-                        finish()
-                    }
+                    onBookingSuccess = { finish() }
                 )
             }
         }
@@ -72,6 +71,7 @@ class BookingActivity : ComponentActivity() {
 
 @Composable
 fun BookingScreen(
+    activity: ComponentActivity,
     placeId: String,
     placeName: String,
     placeLocation: String,
@@ -83,40 +83,39 @@ fun BookingScreen(
     onBack: () -> Unit,
     onBookingSuccess: () -> Unit
 ) {
+    var fullName by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
     var checkInDate by remember { mutableStateOf("") }
     var checkOutDate by remember { mutableStateOf("") }
     var guests by remember { mutableStateOf(1) }
     var specialRequests by remember { mutableStateOf("") }
-    var fullName by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
     var showConfirmDialog by remember { mutableStateOf(false) }
     var showSuccessScreen by remember { mutableStateOf(false) }
-    var bookingId by remember { mutableStateOf("") }
+    var confirmedBookingId by remember { mutableStateOf("") }
 
-    val context = LocalContext.current
     val scrollState = rememberScrollState()
 
-    // Date picker helper
-    fun showDatePicker(onDateSelected: (String) -> Unit) {
+    // ✅ Date picker using the actual Activity — this is the fix
+    fun pickDate(onPicked: (String) -> Unit) {
         val cal = Calendar.getInstance()
         DatePickerDialog(
-            context,
+            activity,
             { _, year, month, day ->
-                onDateSelected(String.format("%02d/%02d/%04d", day, month + 1, year))
+                onPicked(String.format("%02d/%02d/%04d", day, month + 1, year))
             },
             cal.get(Calendar.YEAR),
             cal.get(Calendar.MONTH),
             cal.get(Calendar.DAY_OF_MONTH)
-        ).also {
-            it.datePicker.minDate = System.currentTimeMillis()
-            it.show()
+        ).also { dialog ->
+            dialog.datePicker.minDate = System.currentTimeMillis() - 1000
+            dialog.show()
         }
     }
 
     if (showSuccessScreen) {
         BookingSuccessScreen(
-            bookingId = bookingId,
+            bookingId = confirmedBookingId,
             placeName = placeName,
             checkIn = checkInDate,
             checkOut = checkOutDate,
@@ -129,10 +128,14 @@ fun BookingScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFFF5F5F5))
+            .background(Color(0xFFF8F8FF))
     ) {
         // Place Image Header
-        Box(modifier = Modifier.fillMaxWidth().height(280.dp)) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(260.dp)
+        ) {
             if (placeImageUrl.isNotEmpty()) {
                 AsyncImage(
                     model = placeImageUrl,
@@ -142,7 +145,13 @@ fun BookingScreen(
                 )
             } else {
                 Box(
-                    modifier = Modifier.fillMaxSize().background(Color(0xFF6366F1)),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color(0xFF6366F1), Color(0xFF8B5CF6))
+                            )
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -154,54 +163,73 @@ fun BookingScreen(
                 }
             }
 
-            // Gradient overlay
+            // Dark overlay
             Box(
-                modifier = Modifier.fillMaxSize().background(
-                    Brush.verticalGradient(
-                        colors = listOf(Color.Black.copy(alpha = 0.4f), Color.Transparent, Color.Black.copy(alpha = 0.6f))
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Black.copy(alpha = 0.35f),
+                                Color.Transparent,
+                                Color.Black.copy(alpha = 0.55f)
+                            )
+                        )
                     )
-                )
             )
 
-            // Back button
+            // Back Button
             IconButton(
                 onClick = onBack,
-                modifier = Modifier.padding(top = 40.dp, start = 8.dp).align(Alignment.TopStart)
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(top = 44.dp, start = 12.dp)
             ) {
                 Box(
-                    modifier = Modifier.size(38.dp).background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(12.dp)),
+                    modifier = Modifier
+                        .size(38.dp)
+                        .background(Color.Black.copy(alpha = 0.45f), RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.baseline_flight_24),
-                        contentDescription = "Back",
-                        tint = Color.White,
-                        modifier = Modifier.size(20.dp)
-                    )
+                    Text("←", style = TextStyle(fontSize = 20.sp, color = Color.White, fontWeight = FontWeight.Bold))
                 }
             }
 
-            // Place info on image
+            // Place details overlay
             Column(
-                modifier = Modifier.align(Alignment.BottomStart).padding(16.dp)
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(16.dp)
             ) {
-                Text(placeName, style = TextStyle(fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color.White))
+                Text(
+                    placeName,
+                    style = TextStyle(fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                )
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(painter = painterResource(R.drawable.baseline_explore_24), contentDescription = null, tint = Color.White, modifier = Modifier.size(14.dp))
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_explore_24),
+                        contentDescription = null,
+                        tint = Color.White.copy(alpha = 0.85f),
+                        modifier = Modifier.size(13.dp)
+                    )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(placeLocation, style = TextStyle(fontSize = 13.sp, color = Color.White))
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text("⭐ $placeRating", style = TextStyle(fontSize = 13.sp, color = Color.White))
+                    Text(placeLocation, style = TextStyle(fontSize = 13.sp, color = Color.White.copy(alpha = 0.85f)))
+                    if (placeRating > 0f) {
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text("⭐ $placeRating", style = TextStyle(fontSize = 13.sp, color = Color.White))
+                    }
                 }
             }
 
-            // Price
+            // Price tag
             Box(
-                modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
                     .background(Color(0xFF6366F1), RoundedCornerShape(12.dp))
                     .padding(horizontal = 12.dp, vertical = 6.dp)
             ) {
-                Text(placePrice, style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White))
+                Text(placePrice, style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White))
             }
         }
 
@@ -221,62 +249,55 @@ fun BookingScreen(
             if (placeDescription.isNotEmpty()) {
                 Text(
                     placeDescription,
-                    style = TextStyle(fontSize = 13.sp, color = Color(0xFF666666), lineHeight = 18.sp)
+                    style = TextStyle(fontSize = 13.sp, color = Color(0xFF777777), lineHeight = 18.sp)
                 )
             }
 
-            // Personal Info Card
-            BookingCard(title = "Personal Information") {
-                BookingTextField(
-                    label = "Full Name *",
-                    value = fullName,
-                    onValueChange = { fullName = it },
-                    placeholder = "Enter your full name"
-                )
+            // Personal Info
+            BookingCard(title = "Your Information") {
+                BookingField(label = "Full Name *", value = fullName, onValueChange = { fullName = it }, placeholder = "Enter your full name")
                 Spacer(modifier = Modifier.height(10.dp))
-                BookingTextField(
-                    label = "Phone Number *",
-                    value = phone,
-                    onValueChange = { phone = it },
-                    placeholder = "Enter your phone number"
-                )
+                BookingField(label = "Phone Number *", value = phone, onValueChange = { phone = it }, placeholder = "Enter your phone number")
             }
 
-            // Trip Details Card
+            // Trip Details
             BookingCard(title = "Trip Details") {
-                // Check-in
+
+                // Check-in date
                 Text("Check-in Date *", style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color(0xFF374151)))
                 Spacer(modifier = Modifier.height(6.dp))
                 OutlinedButton(
-                    onClick = { showDatePicker { checkInDate = it } },
+                    onClick = { pickDate { checkInDate = it } },
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = if (checkInDate.isEmpty()) Color(0xFF9E9E9E) else Color(0xFF2D3142)
-                    )
+                    ),
+                    border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp)
                 ) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text(if (checkInDate.isEmpty()) "Select check-in date" else checkInDate, style = TextStyle(fontSize = 14.sp))
-                        Icon(painter = painterResource(R.drawable.baseline_flight_24), contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(if (checkInDate.isEmpty()) "Tap to select check-in date" else checkInDate, style = TextStyle(fontSize = 14.sp))
+                        Text("📅", style = TextStyle(fontSize = 16.sp))
                     }
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Check-out
+                // Check-out date
                 Text("Check-out Date *", style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color(0xFF374151)))
                 Spacer(modifier = Modifier.height(6.dp))
                 OutlinedButton(
-                    onClick = { showDatePicker { checkOutDate = it } },
+                    onClick = { pickDate { checkOutDate = it } },
                     modifier = Modifier.fillMaxWidth().height(52.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(
                         contentColor = if (checkOutDate.isEmpty()) Color(0xFF9E9E9E) else Color(0xFF2D3142)
-                    )
+                    ),
+                    border = ButtonDefaults.outlinedButtonBorder.copy(width = 1.dp)
                 ) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text(if (checkOutDate.isEmpty()) "Select check-out date" else checkOutDate, style = TextStyle(fontSize = 14.sp))
-                        Icon(painter = painterResource(R.drawable.baseline_flight_24), contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(if (checkOutDate.isEmpty()) "Tap to select check-out date" else checkOutDate, style = TextStyle(fontSize = 14.sp))
+                        Text("📅", style = TextStyle(fontSize = 16.sp))
                     }
                 }
 
@@ -286,25 +307,31 @@ fun BookingScreen(
                 Text("Number of Guests", style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color(0xFF374151)))
                 Spacer(modifier = Modifier.height(6.dp))
                 Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    IconButton(
+                    Button(
                         onClick = { if (guests > 1) guests-- },
-                        modifier = Modifier.size(44.dp).background(Color(0xFFEEEEFF), RoundedCornerShape(12.dp))
+                        modifier = Modifier.size(44.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEEEEFF)),
+                        contentPadding = PaddingValues(0.dp)
                     ) {
-                        Text("-", style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6366F1)))
+                        Text("−", style = TextStyle(fontSize = 22.sp, color = Color(0xFF6366F1), fontWeight = FontWeight.Bold))
                     }
                     Text(
-                        "$guests Guest${if (guests > 1) "s" else ""}",
-                        style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2D3142))
+                        "$guests Guest${if (guests != 1) "s" else ""}",
+                        style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2D3142))
                     )
-                    IconButton(
+                    Button(
                         onClick = { if (guests < 20) guests++ },
-                        modifier = Modifier.size(44.dp).background(Color(0xFF6366F1), RoundedCornerShape(12.dp))
+                        modifier = Modifier.size(44.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
+                        contentPadding = PaddingValues(0.dp)
                     ) {
-                        Text("+", style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color.White))
+                        Text("+", style = TextStyle(fontSize = 22.sp, color = Color.White, fontWeight = FontWeight.Bold))
                     }
                 }
             }
@@ -314,7 +341,7 @@ fun BookingScreen(
                 OutlinedTextField(
                     value = specialRequests,
                     onValueChange = { specialRequests = it },
-                    placeholder = { Text("Any special requirements...") },
+                    placeholder = { Text("Any special requirements or requests...") },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     maxLines = 4,
@@ -325,24 +352,29 @@ fun BookingScreen(
                 )
             }
 
-            // Summary Card
+            // Booking Summary
             BookingCard(title = "Booking Summary") {
-                SummaryRow("Place", placeName)
-                SummaryRow("Location", placeLocation)
-                SummaryRow("Price", placePrice)
-                SummaryRow("Check-in", if (checkInDate.isEmpty()) "Not selected" else checkInDate)
-                SummaryRow("Check-out", if (checkOutDate.isEmpty()) "Not selected" else checkOutDate)
-                SummaryRow("Guests", "$guests")
+                SummaryRow(label = "Place", value = placeName)
+                Spacer(modifier = Modifier.height(6.dp))
+                SummaryRow(label = "Location", value = placeLocation)
+                Spacer(modifier = Modifier.height(6.dp))
+                SummaryRow(label = "Price", value = placePrice)
+                Spacer(modifier = Modifier.height(6.dp))
+                SummaryRow(label = "Check-in", value = checkInDate.ifEmpty { "Not selected" })
+                Spacer(modifier = Modifier.height(6.dp))
+                SummaryRow(label = "Check-out", value = checkOutDate.ifEmpty { "Not selected" })
+                Spacer(modifier = Modifier.height(6.dp))
+                SummaryRow(label = "Guests", value = "$guests")
             }
 
-            // Book Button
+            // Confirm Booking Button
             Button(
                 onClick = {
                     when {
-                        fullName.trim().isEmpty() -> Toast.makeText(context, "Please enter your name", Toast.LENGTH_SHORT).show()
-                        phone.trim().isEmpty() -> Toast.makeText(context, "Please enter your phone number", Toast.LENGTH_SHORT).show()
-                        checkInDate.isEmpty() -> Toast.makeText(context, "Please select check-in date", Toast.LENGTH_SHORT).show()
-                        checkOutDate.isEmpty() -> Toast.makeText(context, "Please select check-out date", Toast.LENGTH_SHORT).show()
+                        fullName.trim().isEmpty() -> Toast.makeText(activity, "Please enter your name", Toast.LENGTH_SHORT).show()
+                        phone.trim().isEmpty() -> Toast.makeText(activity, "Please enter your phone number", Toast.LENGTH_SHORT).show()
+                        checkInDate.isEmpty() -> Toast.makeText(activity, "Please select check-in date", Toast.LENGTH_SHORT).show()
+                        checkOutDate.isEmpty() -> Toast.makeText(activity, "Please select check-out date", Toast.LENGTH_SHORT).show()
                         else -> showConfirmDialog = true
                     }
                 },
@@ -352,17 +384,17 @@ fun BookingScreen(
                 enabled = !isLoading
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(modifier = Modifier.size(22.dp), color = Color.White)
+                    CircularProgressIndicator(modifier = Modifier.size(22.dp), color = Color.White, strokeWidth = 2.dp)
                 } else {
                     Text("Confirm Booking", style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White))
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 
-    // Confirm Dialog
+    // Confirmation Dialog
     if (showConfirmDialog) {
         AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
@@ -372,8 +404,8 @@ fun BookingScreen(
                 Text("Confirm Booking", style = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2D3142)))
             },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Please review your booking:", style = TextStyle(fontSize = 14.sp, color = Color(0xFF666666)))
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Please confirm your booking details:", style = TextStyle(fontSize = 14.sp, color = Color(0xFF666666)))
                     Spacer(modifier = Modifier.height(4.dp))
                     SummaryRow("Place", placeName)
                     SummaryRow("Check-in", checkInDate)
@@ -402,18 +434,18 @@ fun BookingScreen(
                         ) { success, message ->
                             isLoading = false
                             if (success) {
-                                // Extract booking ID from message
-                                bookingId = message.substringAfter("ID: ").trim()
+                                // message is "Booking confirmed! ID: xxxx"
+                                confirmedBookingId = message.substringAfter("ID: ").trim()
                                 showSuccessScreen = true
                             } else {
-                                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                                Toast.makeText(activity, "Error: $message", Toast.LENGTH_LONG).show()
                             }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1)),
                     shape = RoundedCornerShape(12.dp)
                 ) {
-                    Text("Confirm", style = TextStyle(fontWeight = FontWeight.Bold))
+                    Text("Yes, Book Now", style = TextStyle(fontWeight = FontWeight.Bold))
                 }
             },
             dismissButton = {
@@ -438,15 +470,15 @@ fun BookingSuccessScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.White)
-            .padding(24.dp),
+            .padding(28.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        // Success Icon
+        // Green checkmark circle
         Box(
             modifier = Modifier
                 .size(100.dp)
-                .background(Color(0xFFEEFFF5), RoundedCornerShape(50.dp)),
+                .background(Color(0xFFDCFCE7), RoundedCornerShape(50.dp)),
             contentAlignment = Alignment.Center
         ) {
             Text("✓", style = TextStyle(fontSize = 48.sp, color = Color(0xFF22C55E), fontWeight = FontWeight.Bold))
@@ -462,42 +494,48 @@ fun BookingSuccessScreen(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            "Your booking has been submitted successfully.",
-            style = TextStyle(fontSize = 14.sp, color = Color(0xFF9E9E9E)),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            "Your booking has been submitted.\nThe admin will confirm it shortly.",
+            style = TextStyle(fontSize = 14.sp, color = Color(0xFF9E9E9E), textAlign = TextAlign.Center),
+            textAlign = TextAlign.Center
         )
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Booking Details Card
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(20.dp),
             colors = CardDefaults.cardColors(containerColor = Color(0xFFF8F8FF)),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
         ) {
-            Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(modifier = Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
                     "Booking Details",
-                    style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2D3142))
+                    style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2D3142))
                 )
                 HorizontalDivider(color = Color(0xFFEEEEEE))
-                SummaryRow("Booking ID", bookingId.take(12) + "...")
+                if (bookingId.isNotEmpty()) {
+                    SummaryRow("Booking ID", bookingId.take(16) + if (bookingId.length > 16) "..." else "")
+                }
                 SummaryRow("Place", placeName)
                 SummaryRow("Check-in", checkIn)
                 SummaryRow("Check-out", checkOut)
                 SummaryRow("Guests", "$guests")
-                SummaryRow("Status", "Pending Confirmation")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Status", style = TextStyle(fontSize = 13.sp, color = Color(0xFF9E9E9E)))
+                    Box(
+                        modifier = Modifier
+                            .background(Color(0xFFFFF3E0), RoundedCornerShape(20.dp))
+                            .padding(horizontal = 10.dp, vertical = 4.dp)
+                    ) {
+                        Text("Pending Confirmation", style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color(0xFFD97706)))
+                    }
+                }
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Text(
-            "The admin will confirm your booking shortly.",
-            style = TextStyle(fontSize = 13.sp, color = Color(0xFF9E9E9E)),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
 
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -507,10 +545,12 @@ fun BookingSuccessScreen(
             shape = RoundedCornerShape(14.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF6366F1))
         ) {
-            Text("Done", style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.White))
+            Text("View My Bookings", style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White))
         }
     }
 }
+
+// ── Shared helper composables ──────────────────────────────────────────────────
 
 @Composable
 fun BookingCard(title: String, content: @Composable ColumnScope.() -> Unit) {
@@ -529,13 +569,13 @@ fun BookingCard(title: String, content: @Composable ColumnScope.() -> Unit) {
 }
 
 @Composable
-fun BookingTextField(label: String, value: String, onValueChange: (String) -> Unit, placeholder: String) {
+fun BookingField(label: String, value: String, onValueChange: (String) -> Unit, placeholder: String) {
     Text(label, style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Medium, color = Color(0xFF374151)))
     Spacer(modifier = Modifier.height(6.dp))
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        placeholder = { Text(placeholder, style = TextStyle(fontSize = 13.sp)) },
+        placeholder = { Text(placeholder, style = TextStyle(fontSize = 13.sp, color = Color(0xFF9E9E9E))) },
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         singleLine = true,
@@ -552,9 +592,14 @@ fun BookingTextField(label: String, value: String, onValueChange: (String) -> Un
 fun SummaryRow(label: String, value: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
         Text(label, style = TextStyle(fontSize = 13.sp, color = Color(0xFF9E9E9E)))
-        Text(value, style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2D3142)))
+        Text(
+            value,
+            style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2D3142)),
+            textAlign = TextAlign.End
+        )
     }
 }
