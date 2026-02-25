@@ -6,7 +6,7 @@ import com.example.travelsafe.model.Booking
 import com.example.travelsafe.repository.BookingRepo
 import com.example.travelsafe.repository.BookingRepoImpl
 import com.google.firebase.auth.FirebaseAuth
-
+//DEbugged
 class BookingViewModel : ViewModel() {
 
     private val repo: BookingRepo = BookingRepoImpl()
