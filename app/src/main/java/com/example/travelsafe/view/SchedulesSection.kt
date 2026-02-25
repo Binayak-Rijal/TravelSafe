@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.travelsafe.R
 import com.example.travelsafe.model.FlightSchedule
-
+//DEbugged
 @Composable
 fun SchedulesSection() {
     val schedules = listOf(
