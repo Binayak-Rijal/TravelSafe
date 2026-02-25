@@ -23,7 +23,7 @@ import com.example.travelsafe.LoginActivity
 import com.example.travelsafe.R
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.UserProfileChangeRequest
-
+//DEbugged
 @Composable
 fun ProfileScreen() {
     var showEditDialog by remember { mutableStateOf(false) }
