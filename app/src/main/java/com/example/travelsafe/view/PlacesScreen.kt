@@ -27,7 +27,7 @@ import com.example.travelsafe.BookingActivity
 import com.example.travelsafe.R
 import com.example.travelsafe.model.Place
 import com.example.travelsafe.repository.FirebasePlaceRepoImpl
-
+//DEbugged
 @Composable
 fun PlacesScreen(padding: PaddingValues = PaddingValues()) {
     val repo = remember { FirebasePlaceRepoImpl() }
