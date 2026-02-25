@@ -6,7 +6,7 @@ import com.example.travelsafe.model.Place
 import com.example.travelsafe.repository.AdminPlaceRepo
 import com.example.travelsafe.repository.AdminPlaceRepoImpl
 import com.google.firebase.auth.FirebaseAuth
-
+//Added credentials
 class AdminViewModel : ViewModel() {
 
     private val repo: AdminPlaceRepo = AdminPlaceRepoImpl()
