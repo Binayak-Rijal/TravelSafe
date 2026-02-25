@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.sp
 import com.example.travelsafe.ui.theme.TravelSafeTheme
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
-
+//No longer a launcher activity, MainActivity now just redirects to SplashActivity
 class SplashActivity : ComponentActivity() {
 
 
