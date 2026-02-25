@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.example.travelsafe.model.SearchModel
-
+//DEbugged
 class SearchViewModel : ViewModel() {
 
     var searchState by mutableStateOf(SearchModel())
