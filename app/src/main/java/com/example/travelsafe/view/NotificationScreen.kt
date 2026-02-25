@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.travelsafe.R
 import com.example.travelsafe.model.AppNotification
-
+//DEbugged
 @Composable
 fun NotificationScreen(onBackClick: () -> Unit = {}) {
     val notifications = remember {
