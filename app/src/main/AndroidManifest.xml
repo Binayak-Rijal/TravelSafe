@@ -49,6 +49,7 @@
         </activity>
         <activity android:name=".SearchActivity" />
         <activity android:name=".ResultsActivity" />
+        <activity android:name=".BookingActivity" />
         <activity android:name=".AdminLoginActivity" />
         <activity android:name=".AdminDashboardActivity" />
     </application>
