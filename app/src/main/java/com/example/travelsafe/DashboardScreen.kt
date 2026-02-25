@@ -26,12 +26,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.travelsafe.model.RecommendedPlace
 import com.example.travelsafe.ui.theme.TravelSafeTheme
 import com.example.travelsafe.view.*
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.launch
-import com.example.travelsafe.repository.PlaceRepoImpl
 
 class DashBoardActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,23 +50,13 @@ class DashBoardActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardScreen(fullName: String = "Tina Anderson") {
+fun DashboardScreen(fullName: String = "User") {
     var selectedTab by remember { mutableStateOf(0) }
     var showSearchSheet by remember { mutableStateOf(false) }
     var showNotifications by remember { mutableStateOf(false) }
-    var selectedPlace by remember { mutableStateOf<RecommendedPlace?>(null) }
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
-
-    // Place detail takes over full screen
-    if (selectedPlace != null) {
-        PlaceDetailScreen(
-            place = selectedPlace!!,
-            onBackClick = { selectedPlace = null }
-        )
-        return
-    }
 
     // Notification screen overlay
     if (showNotifications) {
@@ -89,12 +77,12 @@ fun DashboardScreen(fullName: String = "Tina Anderson") {
                 fullName = fullName,
                 padding = padding,
                 onSearchClick = { showSearchSheet = true },
-                onNotificationClick = { showNotifications = true },
-                onPlaceClick = { place -> selectedPlace = place }
+                onNotificationClick = { showNotifications = true }
             )
             1 -> TripPlannerScreen()
-            2 -> BookmarkScreen()
-            3 -> ProfileScreen()
+            2 -> MyBookingsScreen(padding = padding)
+            3 -> BookmarkScreen()
+            4 -> ProfileScreen()
         }
     }
 
@@ -117,26 +105,25 @@ fun DashboardScreen(fullName: String = "Tina Anderson") {
     }
 }
 
-// ── Search Bottom Sheet ──────────────────────────────────────
+// ── Search Bottom Sheet ────────────────────────────────────────────────────────
+// Searches Firebase places in real-time
 
 @Composable
 fun SearchBottomSheetContent(onClose: () -> Unit = {}) {
     var query by remember { mutableStateOf("") }
-    val placeRepo = remember { PlaceRepoImpl() }
-    var allPlaces by remember { mutableStateOf(listOf<RecommendedPlace>()) }
+    val repo = remember { com.example.travelsafe.repository.FirebasePlaceRepoImpl() }
+    var allPlaces by remember { mutableStateOf(listOf<com.example.travelsafe.model.Place>()) }
+    val context = androidx.compose.ui.platform.LocalContext.current
 
-    // Load places on open
     LaunchedEffect(Unit) {
-        placeRepo.getAllPlaces { _, _, list ->
-            allPlaces = list
-        }
+        repo.getAllPlaces { _, _, list -> allPlaces = list }
     }
 
     val filtered = if (query.isEmpty()) allPlaces
     else allPlaces.filter {
         it.name.contains(query, ignoreCase = true) ||
                 it.location.contains(query, ignoreCase = true) ||
-                it.description.contains(query, ignoreCase = true)
+                it.category.contains(query, ignoreCase = true)
     }
 
     Column(
@@ -166,11 +153,15 @@ fun SearchBottomSheetContent(onClose: () -> Unit = {}) {
                 style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF2D3142))
             )
             IconButton(onClick = onClose) {
-                Icon(painter = painterResource(R.drawable.baseline_explore_24), contentDescription = "Close", tint = Color(0xFF9E9E9E))
+                Icon(
+                    painter = painterResource(R.drawable.baseline_explore_24),
+                    contentDescription = "Close",
+                    tint = Color(0xFF9E9E9E)
+                )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         OutlinedTextField(
             value = query,
@@ -197,18 +188,17 @@ fun SearchBottomSheetContent(onClose: () -> Unit = {}) {
             singleLine = true
         )
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         Text(
-            if (query.isEmpty()) "All Places (${allPlaces.size})"
-            else "${filtered.size} result${if (filtered.size != 1) "s" else ""} for \"$query\"",
-            style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF9E9E9E))
+            if (query.isEmpty()) "All Places (${allPlaces.size})" else "${filtered.size} results for \"$query\"",
+            style = TextStyle(fontSize = 13.sp, color = Color(0xFF9E9E9E), fontWeight = FontWeight.Medium)
         )
 
-        Spacer(modifier = Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         LazyColumn(
-            modifier = Modifier.heightIn(max = 320.dp),
+            modifier = Modifier.heightIn(max = 300.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             items(filtered) { place ->
@@ -217,7 +207,20 @@ fun SearchBottomSheetContent(onClose: () -> Unit = {}) {
                     shape = RoundedCornerShape(12.dp),
                     colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-                    onClick = onClose
+                    onClick = {
+                        // Open BookingActivity from search result
+                        val intent = android.content.Intent(context, BookingActivity::class.java).apply {
+                            putExtra("placeId", place.placeId)
+                            putExtra("placeName", place.name)
+                            putExtra("placeLocation", place.location)
+                            putExtra("placePrice", place.price)
+                            putExtra("placeImageUrl", place.imageUrl)
+                            putExtra("placeDescription", place.description)
+                            putExtra("placeRating", place.rating)
+                        }
+                        context.startActivity(intent)
+                        onClose()
+                    }
                 ) {
                     Row(
                         modifier = Modifier
@@ -235,34 +238,19 @@ fun SearchBottomSheetContent(onClose: () -> Unit = {}) {
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Column {
-                                Text(
-                                    place.name,
-                                    style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2D3142))
-                                )
-                                Text(
-                                    place.location,
-                                    style = TextStyle(fontSize = 12.sp, color = Color(0xFF9E9E9E))
-                                )
+                                Text(place.name, style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF2D3142)))
+                                Text(place.location, style = TextStyle(fontSize = 12.sp, color = Color(0xFF9E9E9E)))
                             }
                         }
-                        Text(
-                            place.price,
-                            style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6366F1))
-                        )
+                        Text(place.price, style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6366F1)))
                     }
                 }
             }
 
             if (filtered.isEmpty() && query.isNotEmpty()) {
                 item {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(30.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            "No places found for \"$query\"",
-                            style = TextStyle(fontSize = 14.sp, color = Color(0xFF9E9E9E))
-                        )
+                    Box(modifier = Modifier.fillMaxWidth().padding(24.dp), contentAlignment = Alignment.Center) {
+                        Text("No places found for \"$query\"", style = TextStyle(fontSize = 14.sp, color = Color(0xFF9E9E9E)))
                     }
                 }
             }
@@ -270,15 +258,14 @@ fun SearchBottomSheetContent(onClose: () -> Unit = {}) {
     }
 }
 
-// ── Home Content ─────────────────────────────────────────────
+// ── Home Content ───────────────────────────────────────────────────────────────
 
 @Composable
 fun HomeContent(
     fullName: String,
     padding: PaddingValues,
     onSearchClick: () -> Unit = {},
-    onNotificationClick: () -> Unit = {},
-    onPlaceClick: (RecommendedPlace) -> Unit = {}
+    onNotificationClick: () -> Unit = {}
 ) {
     val scrollState = rememberScrollState()
 
@@ -310,7 +297,8 @@ fun HomeContent(
         Spacer(modifier = Modifier.height(30.dp))
         SchedulesSection()
         Spacer(modifier = Modifier.height(30.dp))
-        RecommendationSection(onPlaceClick = onPlaceClick)
+        // ✅ RecommendationSection now loads from Firebase
+        RecommendationSection()
         Spacer(modifier = Modifier.height(20.dp))
     }
 }
@@ -350,7 +338,6 @@ fun HeaderSection(
             )
         }
         Row {
-            // ✅ Notification bell
             IconButton(onClick = onNotificationClick) {
                 Icon(
                     painter = painterResource(R.drawable.baseline_explore_24),
@@ -358,7 +345,6 @@ fun HeaderSection(
                     tint = Color(0xFF2D3142)
                 )
             }
-            // ✅ Search icon
             IconButton(onClick = onSearchClick) {
                 Icon(
                     painter = painterResource(R.drawable.baseline_search_24),
@@ -423,19 +409,21 @@ fun TravelCategoryCard(category: TravelCategory, onClick: () -> Unit = {}) {
     }
 }
 
+// ✅ Updated bottom nav — 5 tabs including "Bookings"
 @Composable
 fun BottomNavigationBar(selectedTab: Int, onTabSelected: (Int) -> Unit) {
     NavigationBar(containerColor = Color.White, contentColor = Color(0xFF6366F1)) {
         val navItems = listOf(
             Triple(R.drawable.baseline_home_24, "Home", 0),
             Triple(R.drawable.baseline_flight_24, "Trips", 1),
-            Triple(R.drawable.baseline_bookmark_24, "Saved", 2),
-            Triple(R.drawable.baseline_person_24, "Profile", 3)
+            Triple(R.drawable.baseline_bookmark_24, "Bookings", 2),
+            Triple(R.drawable.baseline_bookmark_24, "Saved", 3),
+            Triple(R.drawable.baseline_person_24, "Profile", 4)
         )
         navItems.forEach { (icon, label, index) ->
             NavigationBarItem(
                 icon = { Icon(painter = painterResource(icon), contentDescription = label) },
-                label = { Text(label) },
+                label = { Text(label, style = TextStyle(fontSize = 10.sp)) },
                 selected = selectedTab == index,
                 onClick = { onTabSelected(index) },
                 colors = NavigationBarItemDefaults.colors(
