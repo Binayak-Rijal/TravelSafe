@@ -29,7 +29,8 @@ fun PlaceDetailScreen(
     place: RecommendedPlace,
     onBackClick: () -> Unit = {},
     onBookNowClick: (RecommendedPlace) -> Unit = {}
-) {
+)
+{
     val scrollState = rememberScrollState()
     val isBookmarked = BookmarkManager.isBookmarked(place)
 
