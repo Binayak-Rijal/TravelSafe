@@ -28,7 +28,7 @@ data class FlightSchedule(
     val price: String,
     val rating: Int
 )
-
+//DEbugged
 @Composable
 fun FlightSchedulesSection() {
     val schedules = listOf(
