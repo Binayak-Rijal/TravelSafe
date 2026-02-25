@@ -21,7 +21,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.travelsafe.R
 import com.example.travelsafe.viewmodel.SearchViewModel
-
+//DEbugged
 @Composable
 fun SearchScreen(
     onBackClick: () -> Unit = {},
