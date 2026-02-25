@@ -9,7 +9,7 @@ import com.example.travelsafe.repository.PlaceRepoImpl
 
 class PlaceViewModel : ViewModel() {
 
-    // ✅ Using RepoImpl through the interface
+    // Using RepoImpl through the interface
     private val placeRepo: PlaceRepo = PlaceRepoImpl()
 
     fun getAllPlaces(
